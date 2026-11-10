@@ -10,7 +10,7 @@ import {
 } from '../src/engine/index.ts';
 
 export const api = Router();
-const ah = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next); // async errors -> handler
+const ah = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 const strip = q => q.select('-_id').lean();
 const GAP = new Set(['NO_COVERAGE', 'UNDERSTAFFED']);
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -28,9 +28,7 @@ async function mustFindRoster(month) {
   return doc;
 }
 
-/* ───────────── Master data: generic CRUD, so new brands/processes/employees need no code ───────────── */
 
-// Deleting a parent must not leave orphans, or a removed process would still "need coverage".
 const cascade = {
   employees: id => Promise.all([Assignment.deleteMany({ employeeId: id }), Absence.deleteMany({ employeeId: id })]),
   processes: id => Assignment.deleteMany({ processId: id }),
@@ -39,7 +37,6 @@ const cascade = {
     await Promise.all([Proc.deleteMany({ brandId: id }), Assignment.deleteMany({ processId: { $in: ids } })]);
   },
 };
-// Natural ids where one exists, so the same holiday/assignment can't be added twice.
 const idFor = {
   holidays: b => b.date,
   assignments: b => `${b.employeeId}:${b.processId}:${b.role ?? 'primary'}`,
@@ -84,8 +81,6 @@ api.post('/seed', ah(async (req, res) => {
   res.json({ loaded, note: loaded ? 'Sample data loaded' : 'Database not empty; use ?force=true to reset' });
 }));
 
-/* ───────────── Rosters ───────────── */
-
 api.get('/rosters', ah(async (_req, res) =>
   res.json(await strip(Roster.find().select('month status version publishedAt').sort({ month: 1 })))));
 
@@ -103,7 +98,6 @@ api.get('/rosters/:month/validation', ah(async (req, res) => {
   res.json(validate(ctx, toEngineRoster(roster, month)));
 }));
 
-// Generate (or regenerate) a month. Manually pinned cells are kept unless keepPinned:false.
 api.post('/rosters/:month/generate', ah(async (req, res) => {
   const { month } = req.params;
   const { keepPinned = true, force = false } = req.body ?? {};
@@ -118,8 +112,6 @@ api.post('/rosters/:month/generate', ah(async (req, res) => {
   res.json({ roster: saved, validation: validate(ctx, roster) });
 }));
 
-// Manual edits. Only W/WO are hand-editable: leaves come from approved absences and
-// closures from calendars, so letting someone overwrite them would break the model.
 api.patch('/rosters/:month', ah(async (req, res) => {
   const { month } = req.params;
   const { edits = [], addReliefs = [], removeReliefs = [] } = req.body ?? {};
@@ -158,7 +150,6 @@ api.patch('/rosters/:month', ah(async (req, res) => {
   res.json({ roster: saved, reopened: doc.status === 'published', validation: validate(ctx, roster) });
 }));
 
-// Ranked, simulated fixes for one coverage gap. Body: { processId, date }
 api.post('/rosters/:month/suggestions', ah(async (req, res) => {
   const { month } = req.params;
   const { processId, date } = req.body ?? {};
@@ -168,9 +159,6 @@ api.post('/rosters/:month/suggestions', ah(async (req, res) => {
   res.json(suggestFor(ctx, toEngineRoster(doc, month), { processId, date }, new Set(doc.pinned ?? [])));
 }));
 
-// The change-handling flow. Body: { employeeId, date, type?: 'L'|'CO', apply?: boolean }
-//   apply:false (default) = dry run: shows the damage and the auto-repair without saving anything.
-//   apply:true            = records the absence AND saves the repaired roster as a new draft.
 api.post('/rosters/:month/absence', ah(async (req, res) => {
   const { month } = req.params;
   const { employeeId, date, type = 'L', apply = false } = req.body ?? {};
@@ -185,7 +173,6 @@ api.post('/rosters/:month/absence', ah(async (req, res) => {
   const id = randomId();
   const r = applyAbsence(cfg, month, toEngineRoster(doc, month), { id, employeeId, date, type });
 
-  // For every gap that survives the auto-repair, attach ranked options for the manager.
   const locked = new Set(doc.pinned ?? []);
   const remainingGaps = r.validation.issues.filter(i => GAP.has(i.code)).slice(0, 12)
     .map(issue => ({ issue, suggestions: suggestFor(r.ctx2, r.repaired, issue, locked) }));
@@ -197,16 +184,14 @@ api.post('/rosters/:month/absence', ah(async (req, res) => {
   }
   res.json({
     applied: apply,
-    gapsCausedByChange: r.impact.issues.filter(i => GAP.has(i.code)),   // before repair
+    gapsCausedByChange: r.impact.issues.filter(i => GAP.has(i.code)),
     beforeRepair: r.impact.stats,
     afterRepair: r.validation.stats,
-    remainingGaps,                                                      // needs the manager's decision
-    changes: r.changes,                                                 // exactly which cells moved
+    remainingGaps,
+    changes: r.changes,
   });
 }));
 
-// Publish gate: the server re-validates, so a stale or buggy client can't publish an invalid roster.
-// Mandatory errors block publishing unless the manager explicitly overrides WITH a written reason.
 api.post('/rosters/:month/publish', ah(async (req, res) => {
   const { month } = req.params;
   const { override = false, reason = '' } = req.body ?? {};
@@ -226,7 +211,6 @@ api.post('/rosters/:month/publish', ah(async (req, res) => {
   res.json({ roster: saved, stats: v.stats });
 }));
 
-// CSV export (opens in Excel / Google Sheets). 'W+R' means working and also booked as relief that day.
 api.get('/rosters/:month/export.csv', ah(async (req, res) => {
   const { month } = req.params;
   const doc = await mustFindRoster(month);

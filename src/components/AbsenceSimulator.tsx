@@ -49,8 +49,6 @@ export function AbsenceSimulator() {
             <select value={type} onChange={e => setType(e.target.value as 'L' | 'CO')}>
               <option value="L">Leave</option><option value="CO">Comp-off</option></select></label>
           <button className="btn primary" disabled={!ready || busy} onClick={() => run(false)}>Preview impact</button>
-          {demo && <button className="btn" onClick={() => { setEmployeeId(demo.owner); setDate(demo.day); setResult(null); }}>
-            Try it: {emp(demo.owner)} (sole owner of Bloom Organics › Abandoned Cart) on {shortDate(demo.day)}</button>}
         </div>
       </div>
 

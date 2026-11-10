@@ -10,8 +10,6 @@ const NAMES = ['Anita Deshmukh','Rohan Mehta','Sneha Kulkarni','Priya Sharma','A
 const eid = (n: number) => `e${String(n).padStart(2, '0')}`;
 const FLOATER: Record<string, string> = { alpha: 'e31', bravo: 'e32', charlie: 'e33' };
 
-// [brand, pod, 'PROCESS:calendar,...'] -> one dedicated employee each (e04..e19)
-// calendar codes: 365 = every day, HOL = every day except public holidays, SUN = closed Sundays + holidays
 const SINGLES: [string, string, string][] = [
   ['Lumina Skincare','alpha','CS:365,ACC:365,NDR:HOL'], ['UrbanThread','bravo','CS:HOL,ACC:SUN'],
   ['Nomad Gear','charlie','CS:365,RET:HOL'], ['PureBrew Coffee','alpha','CS:SUN,ACC:SUN'],
@@ -22,7 +20,6 @@ const SINGLES: [string, string, string][] = [
   ['BoltBikes','alpha','CS:365,NDR:HOL'], ['Velvet Candles','bravo','CS:SUN,ACC:SUN'],
   ['MintFresh','charlie','CS:HOL,ACC:HOL'], ['Sparkle Gadgets','alpha','CS:365,ACC:SUN'],
 ];
-// Multi-employee brands: separate AND overlapping process ownership, plus day-specific minimums.
 const MULTI = [
   { id: 'bloom', name: 'Bloom Organics', pod: 'alpha',
     procs: [['CS','365',1],['ACC','HOL',1],['NDR','SUN',1]] as [string,string,number][],
@@ -79,7 +76,6 @@ export function seedConfig(): Config {
       const [code, cal] = part.split(':');
       const pid = addProcess(brandId, code, cal);
       cfg.assignments.push({ employeeId: emp, processId: pid, role: 'primary' });
-      // Anything not auto-closed on Sunday needs relief when the sole owner takes a weekly off.
       if (cal !== 'SUN') cfg.assignments.push({ employeeId: FLOATER[pod], processId: pid, role: 'backup' });
     }
   });
