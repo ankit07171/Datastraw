@@ -2,8 +2,6 @@ import { useMemo, useState } from 'react';
 import { useStore, type AbsenceResult } from '../store';
 import { shortDate } from './shared';
 
-// "Handle a change": preview what a new leave does to coverage, see what the auto-repair
-// would move, and only then approve it. Nothing is saved until "Approve leave".
 export function AbsenceSimulator() {
   const { ctx, roster, month, simulateAbsence, select, setTab } = useStore();
   const [employeeId, setEmployeeId] = useState('');

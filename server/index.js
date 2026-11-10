@@ -2,7 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
-import fs from 'fs';
+import fs from 'node:fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { api } from './routes.js';
@@ -17,9 +17,11 @@ app.get('/api/health', (_req, res) =>
 app.use('/api', api);
 
 const dist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../dist');
+if (fs.existsSync(dist)) {
+  app.use(express.static(dist));
   app.get(/^\/(?!api).*/, (_req, res) => res.sendFile(path.join(dist, 'index.html')));
 }
-   
+
 app.use((err, _req, res, _next) => {
   if (err.name === 'ValidationError' || err.name === 'CastError')
     return res.status(400).json({ error: err.message });
