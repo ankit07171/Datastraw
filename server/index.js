@@ -2,7 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
-import fs from 'node:fs';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { api } from './routes.js';
@@ -37,11 +37,21 @@ app.use((err, _req, res, _next) => {
 
 async function start() {
   if (!process.env.MONGODB_URI) throw new Error('MONGODB_URI is not set (copy .env.example to .env)');
+  
+  console.log('Connecting to MongoDB...');
   await mongoose.connect(process.env.MONGODB_URI);
+  console.log('MongoDB connected successfully');
+  
   await mongoose.syncIndexes();
   if (process.env.AUTO_SEED !== 'false' && (await seed())) console.log('Empty database: loaded sample data');
-  const port = process.env.PORT ?? 4000;
-  app.listen(port, () => console.log(`API listening on :${port}`));
+  
+  const port = process.env.PORT || 4000;
+  const host = '0.0.0.0';
+  
+  app.listen(port, host, () => {
+    console.log(`API listening on ${host}:${port}`);
+    console.log(`Health check: http://localhost:${port}/api/health`);
+  });
 }
 
 start().catch(err => { console.error(err); process.exit(1); });
