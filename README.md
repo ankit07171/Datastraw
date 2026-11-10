@@ -1,5 +1,7 @@
 # Roster Desk: Smart Roster Management System
 
+**Live Demo:** https://your-app-name.onrender.com
+
 A browser-based tool for an operations manager to **plan, generate, validate and edit monthly rosters** for 30+ employees
 across many brands, processes and pods. Built for the Datastraw internship assessment.
 
@@ -142,5 +144,6 @@ curl localhost:4000/api/rosters/2026-12
 curl -X POST localhost:4000/api/rosters/2026-12/absence -H 'content-type: application/json' \
   -d '{"employeeId":"e22","date":"2026-12-21","type":"L"}'      # dry run
 ```
-#   D a t a s t r a w  
+#   D a t a s t r a w 
+ 
  
