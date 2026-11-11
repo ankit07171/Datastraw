@@ -1,41 +1,171 @@
 # Roster Desk: Smart Roster Management System
 
-**Live Demo:** https://your-app-name.onrender.com
+**Live Demo:** https://your-app-name.onrender.com  
+**GitHub:** https://github.com/yourusername/datastraw
 
-A browser-based tool for an operations manager to **plan, generate, validate and edit monthly rosters** for 30+ employees
-across many brands, processes and pods. Built for the Datastraw internship assessment.
+A browser-based tool for an operations manager to **plan, generate, validate and edit monthly rosters** for 30+ employees across many brands, processes and pods. Built for the Datastraw internship assessment.
 
-**Stack:** React + Vite + TypeScript + Zustand (frontend) · Node + Express + Mongoose (backend, plain JavaScript) · MongoDB (database)
-· a pure-TypeScript scheduling engine shared by browser and server.
+**Stack:** React + Vite + TypeScript + Zustand (frontend) · Node + Express + Mongoose (backend, plain JavaScript) · MongoDB (database) · a pure-TypeScript scheduling engine shared by browser and server.
 
 ```
 Browser (React + Zustand)  ──/api──▶  Express  ──▶  MongoDB
    engine: instant preview             engine: authoritative publish gate
 ```
 
-## Quick start
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js 18+ 
+- MongoDB (Atlas free tier or local instance)
+- npm or yarn
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/datastraw.git
+   cd datastraw
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+   
+   Copy `.env.example` to `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+
+   Edit `.env` and add your MongoDB connection string:
+   ```env
+   MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/roster?retryWrites=true&w=majority
+   PORT=4000
+   CLIENT_ORIGIN=http://localhost:5173
+   AUTO_SEED=true
+   ```
+
+   **Get MongoDB URI:**
+   - Sign up at https://cloud.mongodb.com/
+   - Create free M0 cluster
+   - Go to "Database Access" → Create user with password
+   - Go to "Network Access" → Add IP `0.0.0.0/0` (allow all)
+   - Go to "Database" → Connect → Drivers → Copy connection string
+   - Replace `<user>`, `<password>`, `<cluster>` with your values
+
+4. **Run the application**
+   ```bash
+   npm run dev
+   ```
+
+   - API: http://localhost:4000
+   - Web: http://localhost:5173
+   
+   The database will auto-seed with 33 employees, 20 brands, and a December 2026 roster on first start.
+
+5. **Verify it works**
+   ```bash
+   curl http://localhost:4000/api/health
+   # Should return: {"ok":true,"db":1}
+   ```
+
+### Build for Production
 
 ```bash
-npm install
-cp .env.example .env          # set MONGODB_URI (a free MongoDB Atlas cluster is fine)
-npm run dev                   # API on :4000, web on :5173 (Vite proxies /api)
+npm run build     # Builds frontend into dist/
+npm start         # Runs API + serves dist/ on one port
 ```
 
-An empty database is **auto-seeded** on first start (33 employees, 20 brands, 3 pods, a generated December 2026 draft).
-Reset anytime with `POST /api/seed?force=true`.
+---
+
+## 📦 Environment Variables
+
+### Required
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `MONGODB_URI` | MongoDB connection string | `mongodb+srv://user:pass@cluster.mongodb.net/roster` |
+
+### Optional
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `4000` | Server port |
+| `CLIENT_ORIGIN` | `http://localhost:5173` | Allowed CORS origins (comma-separated) |
+| `AUTO_SEED` | `true` | Auto-load sample data if database is empty |
+| `NODE_ENV` | `development` | Environment mode |
+
+### Frontend (Vite)
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `VITE_API_URL` | Empty (uses proxy) | API URL for production. Leave empty in dev. |
+
+---
+
+## 🚢 Deployment
+
+### Deploy to Render
+
+1. **Push to GitHub**
+   ```bash
+   git add .
+   git commit -m "Ready for deployment"
+   git push
+   ```
+
+2. **Create Web Service on Render**
+   - Go to https://render.com/
+   - New → Web Service
+   - Connect your GitHub repo
+   - Configure:
+     - **Build Command:** `npm install && npm run build`
+     - **Start Command:** `npm start`
+     - **Instance Type:** Free
+
+3. **Add Environment Variables**
+   In Render dashboard → Environment tab:
+   ```
+   MONGODB_URI = <your-mongodb-uri>
+   NODE_ENV = production
+   AUTO_SEED = true
+   ```
+
+4. **Deploy**
+   - Click "Create Web Service"
+   - Wait ~5-10 minutes
+   - Visit your app at `https://your-app.onrender.com`
+
+### Deploy to Railway / Vercel
+
+Similar process. Ensure:
+- Set `MONGODB_URI` environment variable
+- Build: `npm install && npm run build`
+- Start: `npm start`
+
+---
+
+## 🧪 Testing
 
 ```bash
-npm test          # 10 tests: engine rules, determinism, change handling, store<->API wiring
-npm run typecheck
-npm run build     # production frontend into dist/
-npm start         # API + serves dist/ on one port
+npm test          # Run 10 unit tests
+npm run typecheck # TypeScript validation
 ```
 
-### Deploy (one service)
-Render / Railway web service: **Build** `npm install && npm run build` · **Start** `npm start`.
-Env: `MONGODB_URI` (Atlas; allow the host in Network Access) and optional `PORT`. The Express server serves the React build and `/api`
-from the same origin. To host the frontend separately (e.g. Vercel), set `VITE_API_URL` to the API URL and `CLIENT_ORIGIN` on the API.
-Free tiers sleep when idle, so open the URL once before a demo.
+**Manual smoke test:**
+```bash
+curl localhost:4000/api/health
+curl localhost:4000/api/rosters/2026-12
+curl -X POST localhost:4000/api/rosters/2026-12/absence \
+  -H 'content-type: application/json' \
+  -d '{"employeeId":"e22","date":"2026-12-21","type":"L"}'
+```
+
+---
 
 ## What it does (mapped to the brief)
 
